@@ -1,10 +1,7 @@
 # Managing-Submitters
+## LM JARVIS
 
-```
-python -m pip install pyinstaller
-pyinstaller --onefile --noconsole ManagingSubmitters.py
-```
+Python : 3.9.13
 
-In the input text, only pasting data copied from a column in an Excel sheet is supported. 
 
-Please ensure your data is copied directly from an Excel column before pasting it into the input text.
+Manual : https://equable-gold-734.notion.site/LM-Managing-Program-Manual-0ca45d68b2884614b312d28aad5a3d00?pvs=4
