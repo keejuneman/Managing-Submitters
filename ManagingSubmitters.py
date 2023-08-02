@@ -49,7 +49,7 @@ def create_version_file():
     version_file_path = os.path.join(application_path, "version")
     if not os.path.exists(version_file_path):
         with open(version_file_path, "w") as f:
-            f.write(f"{lastupdate}")
+            f.write(f"{version_info}")
 
 
 def auto_update():
