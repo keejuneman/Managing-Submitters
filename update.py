@@ -3,10 +3,8 @@ import requests
 import sys
 import shutil
 import subprocess
-import zipfile
 from tkinter import messagebox
 from tkinter import messagebox, Tk, Label, ttk
-import platform
 
 OWNER = 'YOUR_NAME'
 REPO = 'YOUT_REPO'

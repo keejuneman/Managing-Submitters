@@ -6,13 +6,10 @@ from tkinter import Text, Scrollbar, ttk, filedialog, filedialog, messagebox
 import pyautogui as p
 import pickle
 from screeninfo import get_monitors
-import zipfile
 import requests
 import sys
-import shutil
 import subprocess
 from ttkthemes import ThemedTk
-import time
 
 # INFO
 OWNER = 'YOUR_NAME'
