@@ -11,13 +11,15 @@ import requests
 import sys
 import shutil
 import subprocess
+from ttkthemes import ThemedTk
+import time
 
 # INFO
-OWNER = 'your name'
-REPO = 'your repo name'
+OWNER = 'YOUR_NAME'
+REPO = 'YOUT_REPO'
 API_SERVER_URL = f"https://api.github.com/repos/{OWNER}/{REPO}"
 
-MY_API_KEY = 'your token'
+MY_API_KEY = 'YOUR_TOKEN'
 
 res = requests.get(f"{API_SERVER_URL}/releases/latest",
                    auth=(OWNER, MY_API_KEY))
@@ -28,28 +30,25 @@ total_members = 'total_members.txt'
 categories = 'categories_list.txt'
 
 # Version
-
 version_info = git_json["name"]
 lastupdate = git_json["created_at"][:10]
 
-
 # 자동 업데이트
+application_path = os.path.dirname(os.path.abspath(__file__))
+
 if getattr(sys, 'frozen', False):
     application_path = os.path.dirname(sys.executable)
-elif __file__:
-    application_path = os.path.dirname(__file__)
-
-
-def extract(file_name):
-    with zipfile.ZipFile(file_name, 'r') as zip_ref:
-        zip_ref.extractall(os.path.join(application_path, 'update', 'tmp'))
+    update_exe_path = os.path.join(application_path, "update.exe")
+else:
+    application_path = os.path.dirname(os.path.abspath(__file__))
+    update_exe_path = os.path.join(application_path, "update.exe")
 
 
 def create_version_file():
     version_file_path = os.path.join(application_path, "version")
     if not os.path.exists(version_file_path):
         with open(version_file_path, "w") as f:
-            f.write(f"{version_info}")
+            f.write(f"{lastupdate}")
 
 
 def auto_update():
@@ -58,81 +57,20 @@ def auto_update():
         now_version = f.read()
 
     if git_json["name"] != now_version:
-        MsgBox = messagebox.askyesno("업데이트 확인", "업데이트를 진행하시겠습니까?")
+        MsgBox = messagebox.askyesno(
+            "업데이트 확인", f'{git_json["name"]}버전 업데이트를 진행하시겠습니까?')
         if MsgBox:
+            messagebox.showinfo("알림", "업데이트가 완료되면 프로그램이 재시작 됩니다.")
             if res.status_code != 200:
                 messagebox.showinfo("에러 발생", "업데이트 체크 실패")
                 return
-
-            if git_json["name"] != now_version:
-                messagebox.showinfo(
-                    '업데이트 알림', f'{git_json["tag_name"]} {git_json["name"]}')
-
-            download_url = None
-            for asset in git_json["assets"]:
-                if asset["name"].endswith(".exe"):
-                    download_url = asset["browser_download_url"]
-                    break
-
-            if not download_url:
-                messagebox.showinfo(
-                    "Error", "No executable file found for download.")
-                return
-
-            contents = requests.get(download_url, auth=(OWNER, MY_API_KEY), headers={
-                                    'Accept': 'application/octet-stream'}, stream=True)
-
-            os.makedirs(os.path.join(
-                application_path, "update"), exist_ok=True)
-
-            file_name = os.path.basename(download_url)
-            temp_file_path = os.path.join(
-                application_path, 'update', file_name)
-
-            # Write the downloaded content to the file
-            try:
-                with open(temp_file_path, "wb") as f:
-                    for chunk in contents.iter_content(chunk_size=1024 * 1024):
-                        f.write(chunk)
-            except Exception as e:
-                messagebox.showinfo("에러 발생", f"다음 오류가 발생했습니다:\n{e}")
-                return
-
-            # Gracefully terminate the currently running LM_JAVIS.exe
-            terminate_process(os.path.basename(
-                application_path), "LM_JAVIS.exe")
-
-            # 새 파일을 기존 파일이 있는 위치에 덮어 씀
-            try:
-                shutil.copy(temp_file_path, application_path)
-            except Exception as e:
-                messagebox.showinfo("에러 발생", f"파일 복사 중 오류가 발생했습니다:\n{e}")
-                return
-
-            # 기존 파일에 덮어 쓴 새 파일을 실행함
-            os.startfile(os.path.join(application_path, "LM_JAVIS.exe"))
-
-            # update 폴더 삭제
-            try:
-                shutil.rmtree(os.path.join(application_path, "update"))
-            except Exception as e:
-                messagebox.showinfo("에러 발생", f"폴더 삭제 중 오류가 발생했습니다:\n{e}")
-
-            # 현재 프로세스를 종료함
-            sys.exit()
-
-
-def terminate_process(process_name, exe_name):
-    # Get the process list using 'tasklist' command
-    output = subprocess.check_output(["tasklist"]).decode("cp949").lower()
-
-    # Check if the process_name (directory name) and exe_name (executable name) are running
-    if process_name.lower() in output and exe_name.lower() in output:
-        # Terminate the process
-        subprocess.run(["taskkill", "/f", "/im", exe_name])
+            os.chdir(application_path)
+            subprocess.run([update_exe_path], shell=True)
 
 
 # 공통
+
+
 def load_data(file_path):
     if os.path.isfile(file_path):
         with open(file_path, 'r', encoding="cp949") as f:
@@ -271,15 +209,19 @@ def attendance_check(today, text_box):
         open(f'{folder_path}/{today}/{file_path}', 'w').close()
 
         monitors = get_monitors()
-        main_monitor = monitors[0]
-        sub_monitor = monitors[1]
-        main_box = (main_monitor.x, main_monitor.y,
-                    main_monitor.width, main_monitor.height)
-        sub_box = (sub_monitor.x, sub_monitor.y,
-                   sub_monitor.width, sub_monitor.height)
+        if len(monitors) > 1:
+            main_monitor = monitors[0]
+            sub_monitor = monitors[1]
+            main_box = (main_monitor.x, main_monitor.y,
+                        main_monitor.width, main_monitor.height)
+            sub_box = (sub_monitor.x, sub_monitor.y,
+                       sub_monitor.width, sub_monitor.height)
 
         if selected_monitor == 1:
-            screenshot = p.screenshot(region=main_box)
+            if len(monitors) > 1:
+                screenshot = p.screenshot(region=main_box)
+            else:
+                screenshot = p.screenshot()
         else:
             screenshot = p.screenshot(region=sub_box)
 
@@ -324,7 +266,7 @@ def suggestions():
 
 
 # TK
-app = tk.Tk()
+app = ThemedTk(theme="yaru")
 app.title(f"LM JARVIS")
 app.resizable(False, False)
 app.iconbitmap('C:/Users/rlwns/Desktop/FASTCAMPUS AI 6/fc_icon.ico')
@@ -349,8 +291,9 @@ info_menu.insert_separator(6)
 info_menu.add_command(label="종료", command=app.quit)
 
 version_menu = tk.Menu(menu_bar, tearoff=0)
-version_menu.add_command(label=version_info, command=None)
-version_menu.add_command(label=lastupdate, command=None)
+version_menu.add_command(label=f"버전: {version_info}", command=None)
+version_menu.add_command(label=f"마지막 업데이트: {lastupdate}", command=None)
+version_menu.add_command(label="패치내역", command=None)
 
 
 menu_bar.add_cascade(label="정보", menu=info_menu)
