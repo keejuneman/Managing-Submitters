@@ -107,7 +107,7 @@ def auto_update():
 
         try:
             with open(os.path.join(application_path, "version"), "w") as f:
-                f.write(str(git_json["name"]))
+                f.write(str(git_json["name"]+"T"))
         except Exception as e:
             messagebox.showinfo("에러 발생", f"버전 파일 업데이트 중 오류가 발생했습니다:\n{e}")
 

@@ -2,7 +2,7 @@ import webbrowser
 from datetime import datetime
 import os
 import tkinter as tk
-from tkinter import Text, Scrollbar, ttk, filedialog, filedialog, messagebox
+from tkinter import Text, Scrollbar, ttk, filedialog, filedialog, messagebox, Toplevel
 import pyautogui as p
 import pickle
 from screeninfo import get_monitors
@@ -10,6 +10,7 @@ import requests
 import sys
 import subprocess
 from ttkthemes import ThemedTk
+import random
 
 # INFO
 OWNER = 'YOUR_NAME'
@@ -25,14 +26,13 @@ git_json = res.json()
 # File Path
 total_members = 'total_members.txt'
 categories = 'categories_list.txt'
+icon_path = 'YOUR_ICO_PATH'
 
 # Version
 version_info = git_json["name"]
 lastupdate = git_json["created_at"][:10]
 
 # 자동 업데이트
-application_path = os.path.dirname(os.path.abspath(__file__))
-
 if getattr(sys, 'frozen', False):
     application_path = os.path.dirname(sys.executable)
     update_exe_path = os.path.join(application_path, "update.exe")
@@ -42,29 +42,113 @@ else:
 
 
 def create_version_file():
+    global version_file_path
     version_file_path = os.path.join(application_path, "version")
     if not os.path.exists(version_file_path):
         with open(version_file_path, "w") as f:
-            f.write(f"{lastupdate}")
+            f.write(f"{lastupdate}T")
 
 
-def auto_update():
+def version_definition():
     create_version_file()
     with open(os.path.join(application_path, "version"), "r") as f:
-        now_version = f.read()
+        global now_version
+        global update_TF
+        version_text = f.read()
+        now_version = version_text[:-1]
+        update_TF = version_text[-1]
 
+
+version_definition()
+
+
+def update_yes():
+    messagebox.showinfo("알림", "업데이트가 완료되면 프로그램이 재시작 됩니다.")
+    if res.status_code != 200:
+        messagebox.showinfo("에러 발생", "업데이트 체크 실패")
+        return
+    os.chdir(application_path)
+    subprocess.run([update_exe_path], shell=True)
+
+
+def auto_update_check():
     if git_json["name"] != now_version:
-        MsgBox = messagebox.askyesno(
-            "업데이트 확인", f'{git_json["name"]}버전 업데이트를 진행하시겠습니까?')
-        if MsgBox:
-            messagebox.showinfo("알림", "업데이트가 완료되면 프로그램이 재시작 됩니다.")
-            if res.status_code != 200:
-                messagebox.showinfo("에러 발생", "업데이트 체크 실패")
-                return
-            os.chdir(application_path)
-            subprocess.run([update_exe_path], shell=True)
+        MsgBox = Toplevel(app)
+        MsgBox.title("업데이트 알림")
+        MsgBox.geometry("300x80")
+        MsgBox.resizable(False, False)
+        MsgBox.transient(app)
+        MsgBox.grab_set()
+        MsgBox.iconbitmap(icon_path)
+        screen_width = app.winfo_screenwidth()
+        screen_height = app.winfo_screenheight()
+        modal_width = 300
+        modal_height = 80
+        x = (screen_width - modal_width) // 2
+        y = (screen_height - modal_height) // 2
+        MsgBox.geometry("+%d+%d" % (x, y))
+
+        label = tk.Label(MsgBox, text=f'{git_json["name"]}버전 업데이트를 진행하시겠습니까?')
+        label.pack()
+
+        auto_update_check_TOP = tk.IntVar()
+        checkbox = tk.Checkbutton(
+            MsgBox, text='업데이트 알림 끄기', variable=auto_update_check_TOP)
+        checkbox.pack()
+
+        yes_button = tk.Button(
+            MsgBox, text="예", command=update_yes)
+        yes_button.place(relx=0.35, rely=1.0, anchor='s')
+
+        no_button = tk.Button(MsgBox, text="아니오",
+                              command=lambda: MsgBox.destroy())
+        no_button.place(relx=0.65, rely=1.0, anchor='s')
+
+        checkbox.config(command=lambda: (
+            auto_update_check_var.set(0), write_version_F()))
 
 
+def write_version_F():
+    with open(version_file_path, "w") as f:
+        f.write(f"{now_version}F")
+
+
+def write_version_T():
+    with open(version_file_path, "w") as f:
+        f.write(f"{now_version}T")
+
+
+def on_auto_update_checked():
+    if auto_update_check_var.get() == 1:
+        write_version_T()
+    else:
+        write_version_F()
+
+# def auto_update():
+#     if git_json["name"] != now_version:
+#         MsgBox = messagebox.askyesno(
+#             "업데이트 확인", f'{git_json["name"]}버전 업데이트를 진행하시겠습니까?')
+#         if MsgBox:
+#             messagebox.showinfo("알림", "업데이트가 완료되면 프로그램이 재시작 됩니다.")
+#             if res.status_code != 200:
+#                 messagebox.showinfo("에러 발생", "업데이트 체크 실패")
+#                 return
+#             os.chdir(application_path)
+#             subprocess.run([update_exe_path], shell=True)
+#         else:
+#             messagebox.showinfo("알림", "상단 메뉴바 수동 업데이트 눌러서 진행하시길 바랍니다.")
+#             with open(version_file_path, "w") as f:
+#                 f.write(f"{now_version}F")
+#             auto_update_check_var.set(0)
+
+
+def lastest_version():
+    MsgBox = messagebox.showinfo(
+        "업데이트 확인", f'이미 최신 버전입니다.')
+
+
+# def auto_update_check():
+#     if
 # 공통
 
 
@@ -241,7 +325,42 @@ def update_today(event):
     today = new_today
 
 
+# Tab4
+
+def shuffle_teams():
+    members = total_member.get("1.0", "end-1c").split('\n')
+    members = [member.strip() for member in members if member.strip()]
+
+    selected_value = int(team_count.get())  # 선택된 값을 가져옴
+
+    if team_radio_var.get() == 1:  # 조 단위
+        random.shuffle(members)
+        teams = [members[i:i+selected_value]
+                 for i in range(0, len(members), selected_value)]
+    else:  # 명 단위
+        random.shuffle(members)
+        teams = []
+
+        while members:
+            for i in range(min(selected_value, len(members))):
+                if len(teams) <= i:
+                    teams.append([])
+                teams[i].append(members.pop(0))
+
+    result_text = ""
+    # 생성된 조 정보를 문자열로 생성
+    for i, team in enumerate(teams):
+        result_text += f"{i+1}조: {' '.join(team)}\n"
+
+    # 생성된 결과를 클립보드에 복사
+    app.clipboard_clear()
+    app.clipboard_append(result_text)
+    clipboard_text3.delete("1.0", "end")
+    clipboard_text3.insert("1.0", result_text)
+
 # Menu
+
+
 def show_github_address():
     url = "https://github.com/keejuneman/Managing-Submitters"
     webbrowser.open(url)
@@ -262,11 +381,16 @@ def suggestions():
     webbrowser.open(url)
 
 
+def update_review():
+    url = f"https://github.com/{OWNER}/{REPO}/releases/latest"
+    webbrowser.open(url)
+
+
 # TK
 app = ThemedTk(theme="yaru")
 app.title(f"LM JARVIS")
 app.resizable(False, False)
-app.iconbitmap('C:/Users/rlwns/Desktop/FASTCAMPUS AI 6/fc_icon.ico')
+app.iconbitmap(icon_path)
 
 
 # style
@@ -290,11 +414,22 @@ info_menu.add_command(label="종료", command=app.quit)
 version_menu = tk.Menu(menu_bar, tearoff=0)
 version_menu.add_command(label=f"버전: {version_info}", command=None)
 version_menu.add_command(label=f"마지막 업데이트: {lastupdate}", command=None)
-version_menu.add_command(label="패치내역", command=None)
+version_menu.add_command(label="업데이트 내역", command=update_review)
 
+auto_update_check_var = tk.IntVar()
+
+if update_TF == "T":
+    auto_update_check_var.set(1)
+else:
+    auto_update_check_var.set(0)
+version_menu.add_checkbutton(
+    label="자동업데이트", variable=auto_update_check_var, command=on_auto_update_checked)
 
 menu_bar.add_cascade(label="정보", menu=info_menu)
 menu_bar.add_cascade(label="버전", menu=version_menu)
+menu_bar.add_cascade(label="업데이트", command=lambda: auto_update_check(
+) if git_json["name"] != now_version else lastest_version())
+
 
 app.config(menu=menu_bar)
 
@@ -304,11 +439,12 @@ notebook = ttk.Notebook(app)
 tab1 = ttk.Frame(notebook)
 tab2 = ttk.Frame(notebook)
 tab3 = ttk.Frame(notebook)
-
+tab4 = ttk.Frame(notebook)
 
 notebook.add(tab1, text="제출인원관리")
 notebook.add(tab2, text="카운트")
 notebook.add(tab3, text="화면캡쳐")
+notebook.add(tab4, text="랜덤조편성")
 
 notebook.grid(row=0, column=0, rowspan=2)
 
@@ -449,7 +585,7 @@ open_button.pack(pady=5)
 
 # 라디오 박스
 radio_var_frame = tk.LabelFrame(tab3, text="시간선택", font=('Helvetica', 14))
-radio_var_frame.grid(row=1, column=0, padx=15, pady=15, rowspan=2, sticky="n")
+radio_var_frame.grid(row=1, column=0, padx=15, pady=15, rowspan=2, sticky="w")
 
 radio_var = tk.IntVar()
 radio_var.set(1)
@@ -508,6 +644,78 @@ m2 = tk.Radiobutton(monitor_var_frame, text="서브 모니터", value=2,
 m1.pack()
 m2.pack()
 
-auto_update()
+
+# tab4
+total_members_frame2 = tk.LabelFrame(
+    tab4, text="전체 인원", font=('Helvetica', 14))
+total_members_frame2.grid(row=0, column=0, padx=15, pady=15, sticky='w')
+
+loaded_categories = '\n'.join(load_data(total_members))
+total_member = Text(total_members_frame2, width=60, height=10)
+total_member.insert('1.0', loaded_categories)
+total_member.pack(side="left")
+
+total_member.bind("<<Modified>>", total_member_changed)
+
+scrollbar_members = Scrollbar(
+    total_members_frame2, command=total_member.yview)
+scrollbar_members.pack(side="left", fill='y')
+total_member.config(yscrollcommand=scrollbar_members.set)
+
+submit_members_button = ttk.Button(
+    total_members_frame2, text="전체 인원 저장", command=lambda: save_data(total_member, total_members))
+submit_members_button.pack(side="bottom")
+
+total_members_count = tk.StringVar()
+total_members_count_label = tk.Label(
+    total_members_frame2, textvariable=total_members_count)
+total_members_count_label.pack(side="top")
+total_members_count.set(f"전체 인원: {len(load_data(total_members))} 명")
+
+
+# frame 2
+team_setting_frame = tk.LabelFrame(
+    tab4, text="조 편성 설정 및 실행", font=('Helvetica', 14))
+team_setting_frame.grid(row=1, column=0, padx=15, pady=15, sticky='nwes')
+
+
+team_radio_var = tk.IntVar()
+team_radio_var.set(1)
+team_r1 = tk.Radiobutton(team_setting_frame, text="팀 당 인원", value=1,
+                         variable=team_radio_var)
+team_r2 = tk.Radiobutton(team_setting_frame, text="팀 갯수", value=2,
+                         variable=team_radio_var)
+team_r1.pack()
+team_r2.pack()
+
+# number setting
+count_combo = [int_num for int_num in range(1, 101)]
+team_count = ttk.Combobox(team_setting_frame)
+team_count.config(height=5, values=count_combo, state="nomal")
+team_count.set(1)
+team_count.pack()
+
+# button
+shuffle_teams_button = ttk.Button(
+    team_setting_frame, text="조 편성", command=shuffle_teams)
+shuffle_teams_button.pack(side='right')
+
+
+# frame 4
+clipboard_checker_frame3 = tk.LabelFrame(
+    tab4, text="결과", font=('Helvetica', 14))
+clipboard_checker_frame3.grid(row=3, column=0, padx=15, pady=15)
+
+clipboard_text3 = Text(clipboard_checker_frame3, width=77, height=10)
+clipboard_text3.pack(side="left")
+
+scrollbar_clipboard = Scrollbar(
+    clipboard_checker_frame3, command=clipboard_text3.yview)
+scrollbar_clipboard.pack(side="left", fill='y')
+clipboard_text3.config(yscrollcommand=scrollbar_clipboard.set)
+
+
+if update_TF == 'T':
+    auto_update_check()
 load_folder_path()
 app.mainloop()
