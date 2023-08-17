@@ -17,8 +17,10 @@ import configparser
 
 
 # INFO
+setting_ini_path = os.path.join(
+    'setting.ini_PATH', 'setting.ini')
 SETTING = configparser.ConfigParser()
-SETTING.read('setting.ini')
+SETTING.read(setting_ini_path)
 
 OWNER = SETTING["SETTING"]['OWNER']
 REPO = SETTING["SETTING"]['REPO']
