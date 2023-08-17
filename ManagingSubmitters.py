@@ -11,13 +11,17 @@ import sys
 import subprocess
 from ttkthemes import ThemedTk
 import random
+import keyboard
+import threading
+
 
 # INFO
 OWNER = 'YOUR_NAME'
 REPO = 'YOUT_REPO'
 API_SERVER_URL = f"https://api.github.com/repos/{OWNER}/{REPO}"
-
 MY_API_KEY = 'YOUR_TOKEN'
+ICON_PATH = 'YOUR_ICO_PATH'
+
 
 res = requests.get(f"{API_SERVER_URL}/releases/latest",
                    auth=(OWNER, MY_API_KEY))
@@ -26,7 +30,6 @@ git_json = res.json()
 # File Path
 total_members = 'total_members.txt'
 categories = 'categories_list.txt'
-icon_path = 'YOUR_ICO_PATH'
 
 # Version
 version_info = git_json["name"]
@@ -79,7 +82,7 @@ def auto_update_check():
         MsgBox.resizable(False, False)
         MsgBox.transient(app)
         MsgBox.grab_set()
-        MsgBox.iconbitmap(icon_path)
+        MsgBox.iconbitmap(ICON_PATH)
         screen_width = app.winfo_screenwidth()
         screen_height = app.winfo_screenheight()
         modal_width = 300
@@ -325,8 +328,16 @@ def update_today(event):
     today = new_today
 
 
-# Tab4
+def on_key_press():
+    attendance_check(today_text.get("1.0", "end-1c").strip(), text_box)
 
+
+def global_hotkey_listener():
+    keyboard.add_hotkey('ctrl+shift+d', on_key_press)
+    keyboard.wait()
+
+
+# Tab4
 def shuffle_teams():
     members = total_member.get("1.0", "end-1c").split('\n')
     members = [member.strip() for member in members if member.strip()]
@@ -390,7 +401,7 @@ def update_review():
 app = ThemedTk(theme="yaru")
 app.title(f"LM JARVIS")
 app.resizable(False, False)
-app.iconbitmap(icon_path)
+app.iconbitmap(ICON_PATH)
 
 
 # style
@@ -613,9 +624,15 @@ text_box = tk.Entry(radio_var_frame, state=tk.DISABLED)
 text_box.pack(padx=15, pady=3)
 
 # # 스크린샷 버튼
-select_folder_button = tk.Button(tab3, text="스크린샷", command=lambda: attendance_check(
+select_folder_button = tk.Button(tab3, text="스크린샷(Ctrl+D)", command=lambda: attendance_check(
     today_text.get("1.0", "end-1c").strip(), text_box))
 select_folder_button.grid(row=0, column=3, padx=15, pady=0, sticky="w")
+app.focus_force()
+
+
+global_hotkey_thread = threading.Thread(target=global_hotkey_listener)
+global_hotkey_thread.daemon = True  # 데몬 스레드로 설정, 앱과 함께 종료
+global_hotkey_thread.start()
 
 # 오늘 날짜
 today_time = datetime.today()
