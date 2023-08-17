@@ -5,12 +5,17 @@ import shutil
 import subprocess
 from tkinter import messagebox
 from tkinter import messagebox, Tk, Label, ttk
+import configparser
 
-OWNER = 'YOUR_NAME'
-REPO = 'YOUT_REPO'
+SETTING = configparser.ConfigParser()
+SETTING.read('setting.ini')
+
+OWNER = SETTING["SETTING"]['OWNER']
+REPO = SETTING["SETTING"]['REPO']
+MY_API_KEY = SETTING["SETTING"]['MY_API_KEY']
+ICON_PATH = SETTING["SETTING"]['ICON_PATH']
+
 API_SERVER_URL = f"https://api.github.com/repos/{OWNER}/{REPO}"
-
-MY_API_KEY = 'YOUR_TOKEN'
 
 res = requests.get(f"{API_SERVER_URL}/releases/latest",
                    auth=(OWNER, MY_API_KEY))
@@ -111,14 +116,16 @@ def auto_update():
         except Exception as e:
             messagebox.showinfo("에러 발생", f"버전 파일 업데이트 중 오류가 발생했습니다:\n{e}")
 
-        terminate_program("LM_JARVIS.exe")
+        try:
+            terminate_program("LM_JARVIS.exe")
+        except Exception as e:
+            messagebox.showinfo("에러발생", f"프로세스 종료 중 오류가 발생했습니다. \n{e}")
 
         try:
             target_file_path = os.path.join(application_path, "LM_JARVIS.exe")
 
             shutil.copy(temp_file_path, target_file_path)
 
-            # Run the updated file
             subprocess.Popen([target_file_path])
 
         except Exception as e:

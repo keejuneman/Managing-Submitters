@@ -13,13 +13,19 @@ from ttkthemes import ThemedTk
 import random
 import keyboard
 import threading
+import configparser
+
 
 # INFO
-OWNER = 'YOUR_NAME'
-REPO = 'YOUT_REPO'
+SETTING = configparser.ConfigParser()
+SETTING.read('setting.ini')
+
+OWNER = SETTING["SETTING"]['OWNER']
+REPO = SETTING["SETTING"]['REPO']
+MY_API_KEY = SETTING["SETTING"]['MY_API_KEY']
+ICON_PATH = SETTING["SETTING"]['ICON_PATH']
+
 API_SERVER_URL = f"https://api.github.com/repos/{OWNER}/{REPO}"
-MY_API_KEY = 'YOUR_TOKEN'
-ICON_PATH = 'YOUR_ICO_PATH'
 
 res = requests.get(f"{API_SERVER_URL}/releases/latest",
                    auth=(OWNER, MY_API_KEY))
