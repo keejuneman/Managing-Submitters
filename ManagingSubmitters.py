@@ -14,14 +14,12 @@ import random
 import keyboard
 import threading
 
-
 # INFO
 OWNER = 'YOUR_NAME'
 REPO = 'YOUT_REPO'
 API_SERVER_URL = f"https://api.github.com/repos/{OWNER}/{REPO}"
 MY_API_KEY = 'YOUR_TOKEN'
 ICON_PATH = 'YOUR_ICO_PATH'
-
 
 res = requests.get(f"{API_SERVER_URL}/releases/latest",
                    auth=(OWNER, MY_API_KEY))
@@ -100,7 +98,7 @@ def auto_update_check():
         checkbox.pack()
 
         yes_button = tk.Button(
-            MsgBox, text="예", command=update_yes)
+            MsgBox, text="예", command=lambda: (MsgBox.destroy(), update_yes()))
         yes_button.place(relx=0.35, rely=1.0, anchor='s')
 
         no_button = tk.Button(MsgBox, text="아니오",
@@ -624,7 +622,7 @@ text_box = tk.Entry(radio_var_frame, state=tk.DISABLED)
 text_box.pack(padx=15, pady=3)
 
 # # 스크린샷 버튼
-select_folder_button = tk.Button(tab3, text="스크린샷(Ctrl+D)", command=lambda: attendance_check(
+select_folder_button = tk.Button(tab3, text="스크린샷(Ctrl+Shift+D)", command=lambda: attendance_check(
     today_text.get("1.0", "end-1c").strip(), text_box))
 select_folder_button.grid(row=0, column=3, padx=15, pady=0, sticky="w")
 app.focus_force()
