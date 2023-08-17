@@ -14,11 +14,11 @@ import random
 import keyboard
 import threading
 import configparser
-
+import time
 
 # INFO
 setting_ini_path = os.path.join(
-    'setting.ini_PATH', 'setting.ini')
+    'C:\\Users\\rlwns\\Desktop\\FASTCAMPUS AI 6\\new', 'setting.ini')
 SETTING = configparser.ConfigParser()
 SETTING.read(setting_ini_path)
 
@@ -27,13 +27,17 @@ REPO = SETTING["SETTING"]['REPO']
 MY_API_KEY = SETTING["SETTING"]['MY_API_KEY']
 ICON_PATH = SETTING["SETTING"]['ICON_PATH']
 
+UPDATE_URL = SETTING["SETTING"]["UPDATE_URL"]
 API_SERVER_URL = f"https://api.github.com/repos/{OWNER}/{REPO}"
 
-res = requests.get(f"{API_SERVER_URL}/releases/latest",
-                   auth=(OWNER, MY_API_KEY))
-git_json = res.json()
+git_res = requests.get(f"{API_SERVER_URL}/releases/latest",
+                       auth=(OWNER, MY_API_KEY))
+git_json = git_res.json()
 
-# File Path
+update_res = requests.get(UPDATE_URL,
+                          auth=(OWNER, MY_API_KEY))
+update_json = update_res.json()
+
 total_members = 'total_members.txt'
 categories = 'categories_list.txt'
 
@@ -73,11 +77,70 @@ version_definition()
 
 def update_yes():
     messagebox.showinfo("알림", "업데이트가 완료되면 프로그램이 재시작 됩니다.")
-    if res.status_code != 200:
+    if git_res.status_code != 200:
         messagebox.showinfo("에러 발생", "업데이트 체크 실패")
         return
     os.chdir(application_path)
-    subprocess.run([update_exe_path], shell=True)
+    if os.path.exists(update_exe_path):
+        subprocess.run([update_exe_path], shell=True)
+    else:
+        pass
+
+
+def update_progress(progress_bar, progress_window, percent):
+    progress_bar["value"] = percent
+    progress_window.update()
+
+
+def show_progress_window():
+    progress_window = Toplevel()
+    progress_window.title("Update Progress")
+    progress_window.geometry("300x100")
+    progress_window.iconbitmap(
+        'C:/Users/rlwns/Desktop/FASTCAMPUS AI 6/fc_icon.ico')
+    label = tk.Label(progress_window, text="update 파일을 다운로드 중입니다..")
+    label.pack()
+
+    progress_bar = ttk.Progressbar(
+        progress_window, orient="horizontal", length=250, mode="determinate")
+    progress_bar.pack(pady=10)
+
+    progress_window.update()
+    return progress_window, progress_bar
+
+
+def update_yes():
+    download_url = update_json["assets"][0]["browser_download_url"]
+
+    contents = requests.get(download_url, auth=(OWNER, MY_API_KEY), headers={
+        'Accept': 'application/octet-stream'}, stream=True)
+    progress_window, progress_bar = show_progress_window()
+    update_file_path = os.path.join(application_path, "update.exe")
+
+    if os.path.exists("update.exe"):
+        messagebox.showinfo("알림", "업데이트가 완료되면 프로그램이 재시작 됩니다.")
+        subprocess.run(["update.exe"], shell=True)
+    else:
+        if update_res.status_code == 200:
+            messagebox.showinfo("알림", "업데이트 프로그램이 없어 프로그램을 다운로드 합니다.")
+            time.sleep(1)
+            try:
+                with open(update_file_path, "wb") as f:
+                    total_size = int(contents.headers['Content-Length'])
+                    downloaded_size = 0
+                    for chunk in contents.iter_content(chunk_size=1024 * 1024):
+                        f.write(chunk)
+                        downloaded_size += len(chunk)
+                        percent = (downloaded_size / total_size) * 100
+                        update_progress(progress_bar, progress_window, percent)
+            except Exception as e:
+                messagebox.showinfo("에러 발생", f"다음 오류가 발생했습니다:\n{e}")
+                return
+            os.chdir(application_path)
+            update_yes()
+
+        else:
+            messagebox.showinfo("에러 발생", "업데이트 체크 실패")
 
 
 def auto_update_check():
@@ -389,16 +452,16 @@ def notion_manual():
 
 
 def bug_report():
-    url = "https://equable-gold-734.notion.site/LM-Managing-Program-Manual-0ca45d68b2884614b312d28aad5a3d00?pvs=4"
+    url = "https: // github.com/keejuneman/Managing-Submitters/issues"
     webbrowser.open(url)
 
 
 def suggestions():
-    url = "https://equable-gold-734.notion.site/LM-Managing-Program-Manual-0ca45d68b2884614b312d28aad5a3d00?pvs=4"
+    url = "https://github.com/keejuneman/Managing-Submitters/issues"
     webbrowser.open(url)
 
 
-def update_review():
+def update_history():
     url = f"https://github.com/{OWNER}/{REPO}/releases/latest"
     webbrowser.open(url)
 
@@ -431,7 +494,7 @@ info_menu.add_command(label="종료", command=app.quit)
 version_menu = tk.Menu(menu_bar, tearoff=0)
 version_menu.add_command(label=f"버전: {version_info}", command=None)
 version_menu.add_command(label=f"마지막 업데이트: {lastupdate}", command=None)
-version_menu.add_command(label="업데이트 내역", command=update_review)
+version_menu.add_command(label="업데이트 내역", command=update_history)
 
 auto_update_check_var = tk.IntVar()
 

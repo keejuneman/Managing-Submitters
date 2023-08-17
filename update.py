@@ -6,6 +6,7 @@ import subprocess
 from tkinter import messagebox
 from tkinter import messagebox, Tk, Label, ttk
 import configparser
+import time
 
 setting_ini_path = os.path.join(
     'setting.ini_PATH', 'setting.ini')
@@ -120,6 +121,7 @@ def auto_update():
 
         try:
             terminate_program("LM_JARVIS.exe")
+            time.sleep(1)
         except Exception as e:
             messagebox.showinfo("에러발생", f"프로세스 종료 중 오류가 발생했습니다. \n{e}")
 
